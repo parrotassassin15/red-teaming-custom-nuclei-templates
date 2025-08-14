@@ -1,0 +1,37 @@
+id: wp-admin-login
+info:
+  name: Detect Exposed wp-admin Login Pages
+  author: parrotassassin15
+  severity: medium
+  description: "Identify publicly accessible WordPress admin login pages with minimal false positives."
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-admin"
+      - "{{BaseURL}}/wp-login.php"
+    headers:
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"  # Custom user agent
+    redirects: true
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        words:
+          - "WordPress"  # Confirm WordPress presence
+          - "wp-login"   # WordPress-specific login form keyword
+        part: body
+      - type: regex
+        regex:
+          - "<input[^>]+name=\"log\""  # WordPress login form username field
+          - "<input[^>]+name=\"pwd\""  # WordPress login form password field
+        part: body
+      - type: word
+        words:
+          - "X-Frame-Options"  # Common header in WordPress
+        part: header
+      - type: regex
+        regex:
+          - "wp-admin/(css|js)/"  # Ensure WordPress assets are loaded
+        part: body
+
